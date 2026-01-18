@@ -3,7 +3,11 @@ import { GoogleGenAI } from "@google/genai";
 import { NumerologyResults, UserInput } from "../types";
 
 export async function generateDetailedReading(user: UserInput, results: NumerologyResults): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // 1. API Key එක Vite වලට ගැලපෙන ලෙස import.meta.env මගින් ලබා ගැනීම
+  // Vercel එකේදී Key එකේ නම VITE_GEMINI_API_KEY ලෙස තිබිය යුතුය.
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+  
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   
   const prompt = `
     Act as an expert Chaldean Numerologist. Generate a professional and mystical numerology reading in Sinhala (සිංහල).
@@ -44,13 +48,15 @@ export async function generateDetailedReading(user: UserInput, results: Numerolo
   `;
 
   try {
+    // 2. Model එකේ නම නිවැරදි කිරීම (gemini-1.5-flash භාවිතා කිරීම වඩාත් වේගවත්ය)
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
+      model: 'gemini-1.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
     });
-    return response.text || "විග්‍රහය ලබා ගැනීමට නොහැකි විය.";
+
+    return response.text;
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "කනගාටුයි, පද්ධතියේ දෝෂයක් පවතී.";
+    return "කණගාටුයි, පද්ධතියේ දෝෂයක් පවතී. කරුණාකර ඔබගේ API Key එක Vercel හි VITE_GEMINI_API_KEY ලෙස ඇතුළත් කර ඇති බව තහවුරු කරන්න.";
   }
 }
