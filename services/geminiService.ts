@@ -1,12 +1,15 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { NumerologyResults, UserInput } from "../types";
 
 export async function generateDetailedReading(user: UserInput, results: NumerologyResults): Promise<string> {
-  // 1. API Key එක Vite වලට ගැලපෙන ලෙස import.meta.env මගින් ලබා ගැනීම
-  // Vercel එකේදී Key එකේ නම VITE_GEMINI_API_KEY ලෙස තිබිය යුතුය.
+  // 1. Vite සඳහා නිවැරදිව API Key එක ලබා ගැනීම
+  // මතක ඇතුව Vercel එකේ Variable Name එක VITE_GEMINI_API_KEY ලෙසම දෙන්න.
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
   
+  if (!apiKey) {
+    return "කණගාටුයි, API Key එක සොයාගත නොහැක. කරුණාකර Vercel Settings පරීක්ෂා කරන්න.";
+  }
+
   const ai = new GoogleGenAI({ apiKey: apiKey });
   
   const prompt = `
@@ -19,36 +22,25 @@ export async function generateDetailedReading(user: UserInput, results: Numerolo
     Numbers Calculated:
     - Life Path: ${results.lifePath}
     - Birth Number: ${results.birthNumber}
-    - Destiny Number (නාම අංකය): ${results.destinyNumber}
+    - Destiny Number: ${results.destinyNumber}
     - Soul Urge: ${results.soulUrgeNumber}
     - Personality: ${results.personalityNumber}
     - Maturity: ${results.maturityNumber}
     - Personal Year: ${results.personalYear}
     - Lucky Numbers: ${results.luckyNumbers}
     - Lucky Days: ${results.luckyDays}
-    - Current Energy Phase of Name: ${results.energyPhase}
+    - Current Energy Phase: ${results.energyPhase}
 
-    Requirements for the response (Must be in Sinhala):
-    1. **සම්පූර්ණ නමේ තේරුම සහ ශක්තිය**: Give a detailed description of the overall meaning and vibration of the name "${user.fullName}".
-    2. **නමේ කොටස් විග්‍රහය**: Break down the name into parts (e.g., first name, middle, last) and describe the vibration of each part individually.
-    3. **නම් කාණ්ඩ 8 යටතේ විග්‍රහය**: Analyze the person's life across these 8 specific categories:
-       (1) ධනය සහ වෘත්තිය (Wealth & Career)
-       (2) සෞඛ්‍යය (Health)
-       (3) ප්‍රේමය සහ විවාහය (Love & Marriage)
-       (4) පවුල් ජීවිතය (Family Life)
-       (5) අධ්‍යාත්මික වර්ධනය (Spiritual Growth)
-       (6) සමාජීය පිළිගැනීම (Social Recognition)
-       (7) අභ්‍යන්තර ශක්තිය සහ පෞරුෂය (Inner Strength & Personality)
-       (8) අනාගත අභියෝග සහ විසඳුම් (Future Challenges & Solutions)
-    4. **නමේ වර්තමාන ශක්ති අවධිය (Energy Phase)**: Integrate the phase "${results.energyPhase}" into the reading, explaining how it affects the person right now.
-    5. **වාසනාවන්ත තොරතුරු**: Advice on using the lucky numbers (${results.luckyNumbers}) and lucky days (${results.luckyDays}).
-    6. **අවසාන උපදේශනය**: A mystical and encouraging closing summary.
-
-    Use Markdown formatting for headings and structure.
+    Requirements (In Sinhala):
+    1. සම්පූර්ණ නමේ තේරුම සහ ශක්තිය.
+    2. නමේ කොටස් විග්‍රහය.
+    3. අංශ 8 ක් යටතේ විග්‍රහය (ධනය, සෞඛ්‍යය, ප්‍රේමය, පවුල, අධ්‍යාත්මික, සමාජීය, පෞරුෂය, අනාගතය).
+    4. වර්තමාන ශක්ති අවධිය.
+    5. වාසනාවන්ත තොරතුරු සහ අවසාන උපදේශය.
   `;
 
   try {
-    // 2. Model එකේ නම නිවැරදි කිරීම (gemini-1.5-flash භාවිතා කිරීම වඩාත් වේගවත්ය)
+    // 2. දැනට පවතින ස්ථාවර Model එක භාවිතා කිරීම
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -56,7 +48,7 @@ export async function generateDetailedReading(user: UserInput, results: Numerolo
 
     return response.text;
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return "කණගාටුයි, පද්ධතියේ දෝෂයක් පවතී. කරුණාකර ඔබගේ API Key එක Vercel හි VITE_GEMINI_API_KEY ලෙස ඇතුළත් කර ඇති බව තහවුරු කරන්න.";
+    console.error("Gemini API Error:", error);
+    return "කණගාටුයි, පද්ධතියේ දෝෂයක් පවතී. කරුණාකර පසුව උත්සාහ කරන්න.";
   }
 }
